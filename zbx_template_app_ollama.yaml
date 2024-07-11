@@ -1,0 +1,138 @@
+zabbix_export:
+  version: '6.0'
+  date: '2024-07-11T13:14:08Z'
+  groups:
+    - uuid: 7f27dc73981940769811e7fae4a26772
+      name: Templates/Futur-Tech/Applications
+  templates:
+    - uuid: eacafda166134749aa009c23ce671bfc
+      template: 'Futur-Tech App Ollama'
+      name: 'Futur-Tech App Ollama'
+      description: |
+        Template for monitoring the Ollama application. Includes checks for API port responsiveness, available models, and running models.
+        
+        https://github.com/Futur-Tech/futur-tech-zabbix-ollama
+      groups:
+        - name: Templates/Futur-Tech/Applications
+      items:
+        - uuid: a1069a7006ac46af80af9bceebaeb8d4
+          name: 'Ollama: API port'
+          type: SIMPLE
+          key: 'net.tcp.service[http,,{$OLLAMA_PORT}]'
+          description: 'Checks if the Ollama API port is responsive.'
+          valuemap:
+            name: 'Service state'
+          triggers:
+            - uuid: 7ad2821cf5654fddb9907fdf16e1975e
+              expression: 'last(/Futur-Tech App Ollama/net.tcp.service[http,,{$OLLAMA_PORT}])=0'
+              name: 'Ollama API port is down'
+              priority: HIGH
+              description: |
+                The Ollama API port is not responding.
+                Ensure that the Ollama service is running and accessible on the specified port.
+        - uuid: c65f2841cec64b3eb97ccd640ded33e4
+          name: 'Ollama: models available raw'
+          type: HTTP_AGENT
+          key: ollama.models.available
+          delay: 1h
+          history: '0'
+          trends: '0'
+          value_type: TEXT
+          description: 'Fetches raw data of available models from Ollama API.'
+          url: 'http://{HOST.CONN}:{$OLLAMA_PORT}/api/tags'
+        - uuid: 39fff0ec061a49299fb17ee97b6009c6
+          name: 'Ollama: models available count'
+          type: DEPENDENT
+          key: ollama.models.available.count
+          delay: '0'
+          description: 'Counts the number of available models in Ollama.'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.models[*].name.length()'
+              error_handler: DISCARD_VALUE
+          master_item:
+            key: ollama.models.available
+        - uuid: 649269f99d6c48f6993f104768808946
+          name: 'Ollama: models running raw'
+          type: HTTP_AGENT
+          key: ollama.models.running
+          delay: 3m
+          history: '0'
+          trends: '0'
+          value_type: TEXT
+          description: 'Fetches raw data of currently running models from Ollama API.'
+          url: 'http://{HOST.CONN}:{$OLLAMA_PORT}/api/ps'
+        - uuid: cf528610c2bb49078f7d89aaafc48e83
+          name: 'Ollama: models running count'
+          type: DEPENDENT
+          key: ollama.models.running.count
+          delay: '0'
+          description: 'Counts the number of currently running models in Ollama.'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.models[*].name.length()'
+              error_handler: DISCARD_VALUE
+          master_item:
+            key: ollama.models.running
+      discovery_rules:
+        - uuid: 017c65c051fd4940838d2ef7457a9d9f
+          name: 'Ollama: models available discovery'
+          type: DEPENDENT
+          key: ollama.models.available.discovery
+          delay: '0'
+          description: 'Discovers available models in Ollama.'
+          item_prototypes:
+            - uuid: f934084dd7c540449aa260b3a09fd554
+              name: 'Ollama: model {#MODEL.FAMILY}/{#MODEL.NAME} is running'
+              type: DEPENDENT
+              key: 'ollama.model.running[{#MODEL.NAME}]'
+              delay: '0'
+              description: 'Detects if a specific model is running in Ollama.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.models.[?(@.name == ''{#MODEL.NAME}'')].length()'
+              master_item:
+                key: ollama.models.running
+            - uuid: dadd7d24745e47a8bbdc724e44c8fac9
+              name: 'Ollama: model {#MODEL.FAMILY}/{#MODEL.NAME} raw'
+              type: DEPENDENT
+              key: 'ollama.model[{#MODEL.NAME}]'
+              delay: '0'
+              history: '0'
+              trends: '0'
+              value_type: TEXT
+              description: 'Fetches data for a specific model in Ollama.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.models.[?(@.name == ''{#MODEL.NAME}'')]'
+              master_item:
+                key: ollama.models.available
+          master_item:
+            key: ollama.models.available
+          lld_macro_paths:
+            - lld_macro: '{#MODEL.FAMILY}'
+              path: $.details.family
+            - lld_macro: '{#MODEL.NAME}'
+              path: $.name
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.models[*]'
+      tags:
+        - tag: Futur-Tech
+      macros:
+        - macro: '{$OLLAMA_PORT}'
+          value: '11434'
+          description: 'Ollama API port'
+      valuemaps:
+        - uuid: cea63cbae2ba4fda8258117060d594a2
+          name: 'Service state'
+          mappings:
+            - value: '0'
+              newvalue: Down
+            - value: '1'
+              newvalue: Up

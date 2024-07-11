@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<zabbix_export>
+    <version>6.0</version>
+    <templates>
+        <template>
+            <template>Template App Ollama</template>
+            <name>Template App Ollama</name>
+            <description>Template to monitor a running instance of Ollama</description>
+            <groups>
+                <group>
+                    <name>Templates</name>
+                </group>
+            </groups>
+            <items>
+                <!-- Check if the port is responding -->
+                <item>
+                    <name>Ollama Port Check</name>
+                    <type>0</type>
+                    <snmp_community/>
+                    <multiplier>0</multiplier>
+                    <snmp_oid/>
+                    <key>net.tcp.service[http,127.0.0.1,8080]</key>
+                    <delay>60s</delay>
+                    <history>90d</history>
+                    <trends>365d</trends>
+                    <status>0</status>
+                    <value_type>3</value_type>
+                    <allowed_hosts/>
+                    <units/>
+                    <snmpv3_contextname/>
+                    <snmpv3_securityname/>
+                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                    <snmpv3_authpassphrase/>
+                    <snmpv3_privpassphrase/>
+                    <formula>1</formula>
+                    <logtimefmt/>
+                    <preprocessing/>
+                    <jmx_endpoint/>
+                    <timeout>3s</timeout>
+                    <url/>
+                    <posts/>
+                    <status_codes/>
+                    <follow_redirects>1</follow_redirects>
+                    <post_type>0</post_type>
+                    <http_proxy/>
+                    <headers/>
+                    <retrieve_mode>0</retrieve_mode>
+                    <request_method>0</request_method>
+                    <output_format>0</output_format>
+                    <allow_traps>0</allow_traps>
+                </item>
+                <!-- Check the number of models available -->
+                <item>
+                    <name>Ollama Models Count</name>
+                    <type>7</type>
+                    <snmp_community/>
+                    <multiplier>0</multiplier>
+                    <snmp_oid/>
+                    <key>ollama.models.count</key>
+                    <delay>5m</delay>
+                    <history>90d</history>
+                    <trends>365d</trends>
+                    <status>0</status>
+                    <value_type>3</value_type>
+                    <allowed_hosts/>
+                    <units/>
+                    <snmpv3_contextname/>
+                    <snmpv3_securityname/>
+                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                    <snmpv3_authpassphrase/>
+                    <snmpv3_privpassphrase/>
+                    <formula>1</formula>
+                    <logtimefmt/>
+                    <preprocessing>
+                        <step>
+                            <type>10</type>
+                            <params>{"jsonpath":"$.models[*]"}</params>
+                            <error_handler>0</error_handler>
+                            <error_handler_params/>
+                        </step>
+                        <step>
+                            <type>13</type>
+                            <params>length</params>
+                            <error_handler>0</error_handler>
+                            <error_handler_params/>
+                        </step>
+                    </preprocessing>
+                    <jmx_endpoint/>
+                    <timeout>3s</timeout>
+                    <url>http://127.0.0.1:8080/api/models</url>
+                    <posts/>
+                    <status_codes/>
+                    <follow_redirects>1</follow_redirects>
+                    <post_type>0</post_type>
+                    <http_proxy/>
+                    <headers/>
+                    <retrieve_mode>0</retrieve_mode>
+                    <request_method>1</request_method>
+                    <output_format>1</output_format>
+                    <allow_traps>0</allow_traps>
+                </item>
+                <!-- Check if models are up-to-date -->
+                <item>
+                    <name>Ollama Models Up-to-date</name>
+                    <type>7</type>
+                    <snmp_community/>
+                    <multiplier>0</multiplier>
+                    <snmp_oid/>
+                    <key>ollama.models.uptodate</key>
+                    <delay>5m</delay>
+                    <history>90d</history>
+                    <trends>365d</trends>
+                    <status>0</status>
+                    <value_type>3</value_type>
+                    <allowed_hosts/>
+                    <units/>
+                    <snmpv3_contextname/>
+                    <snmpv3_securityname/>
+                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                    <snmpv3_authpassphrase/>
+                    <snmpv3_privpassphrase/>
+                    <formula>1</formula>
+                    <logtimefmt/>
+                    <preprocessing>
+                        <step>
+                            <type>10</type>
+                            <params>{"jsonpath":"$.models[*].upToDate"}</params>
+                            <error_handler>0</error_handler>
+                            <error_handler_params/>
+                        </step>
+                        <step>
+                            <type>13</type>
+                            <params>min</params>
+                            <error_handler>0</error_handler>
+                            <error_handler_params/>
+                        </step>
+                    </preprocessing>
+                    <jmx_endpoint/>
+                    <timeout>3s</timeout>
+                    <url>http://127.0.0.1:8080/api/models</url>
+                    <posts/>
+                    <status_codes/>
+                    <follow_redirects>1</follow_redirects>
+                    <post_type>0</post_type>
+                    <http_proxy/>
+                    <headers/>
+                    <retrieve_mode>0</retrieve_mode>
+                    <request_method>1</request_method>
+                    <output_format>1</output_format>
+                    <allow_traps>0</allow_traps>
+                </item>
+            </items>
+        </template>
+    </templates>
+    <triggers>
+        <!-- Trigger for port check -->
+        <trigger>
+            <description>Ollama port not responding</description>
+            <expression>{Template App Ollama:net.tcp.service[http,127.0.0.1,8080].last()}=0</expression>
+            <priority>4</priority>
+            <status>0</status>
+            <type>0</type>
+            <dependencies/>
+        </trigger>
+        <!-- Trigger for outdated models -->
+        <trigger>
+            <description>Ollama models not up-to-date</description>
+            <expression>{Template App Ollama:ollama.models.uptodate.last()}=0</expression>
+            <priority>3</priority>
+            <status>0</status>
+            <type>0</type>
+            <dependencies/>
+        </trigger>
+    </triggers>
+</zabbix_export>
